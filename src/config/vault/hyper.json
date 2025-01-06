@@ -30,6 +30,6 @@
     "buyTokenUrl": "https://curve.fi/#/celo/pools/factory-v2-1/swap",
     "addLiquidityUrl": "https://curve.fi/#/celo/pools/factory-v2-1/deposit",
     "removeLiquidityUrl": "https://curve.fi/#/celo/pools/factory-v2-1/withdraw",
-    "network": "hyperevmtest"
+    "network": "hyper"
   }
 ]
