@@ -12,7 +12,7 @@
     "earnContractAddress": "0xb06D2126645024c35347bf1A59b30fC213839840",
     "oracle": "lps",
     "oracleId": "curve-celo-3pool",
-    "status": "eol",
+    "status": "active",
     "createdAt": 1683640846,
     "retireReason": "tvl",
     "retiredAt": 1691070855,
