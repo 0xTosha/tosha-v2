@@ -1,14 +1,17 @@
 import { ArgumentConfig, parse } from 'ts-command-line-args';
-import { getChain, getVaultsForChain } from './common/config';
+import { getAllVaultConfigsByChainId, getVaultsForChain } from './common/config';
 import { sortVaultKeys } from './common/vault-fields';
 import { saveJson } from './common/files';
+import { VaultConfig } from '../src/features/data/apis/config-types';
+import { cloneDeep, keyBy } from 'lodash';
 
 type RunArgs = {
   help?: boolean;
-  chain: string;
+  chain?: string;
   status: 'active' | 'eol' | 'paused';
   reason?: string;
   vaults: string[];
+  includeRelated: boolean;
 };
 
 function Status(input: unknown): RunArgs['status'] {
@@ -30,6 +33,7 @@ const runArgsConfig: ArgumentConfig<RunArgs> = {
     type: String,
     alias: 'c',
     description: 'Chain json file to process',
+    optional: true,
   },
   status: {
     type: Status,
@@ -48,6 +52,12 @@ const runArgsConfig: ArgumentConfig<RunArgs> = {
     alias: 'v',
     description: 'Vault ids to set the status on',
   },
+  includeRelated: {
+    type: Boolean,
+    alias: 'i',
+    description: 'Include related vaults (vault/rp variants)',
+    defaultValue: false,
+  },
 };
 
 function getRunArgs() {
@@ -62,6 +72,85 @@ function getRunArgs() {
   });
 }
 
+function findRelatedVaults(allVaults: VaultConfig[], earnedTokenAddress: string): any[] {
+  const lowerEarnedTokenAddress = earnedTokenAddress.toLowerCase();
+  return allVaults.filter(
+    vault => vault.tokenAddress && vault.tokenAddress.toLowerCase() === lowerEarnedTokenAddress
+  );
+}
+
+function applyChange(vault: VaultConfig, args: RunArgs, now: number): VaultConfig {
+  const newVault = cloneDeep(vault);
+  delete newVault.retireReason;
+  delete newVault.retiredAt;
+  delete newVault.pauseReason;
+  delete newVault.pausedAt;
+
+  if (args.status === 'eol') {
+    if (args.reason) {
+      return sortVaultKeys({
+        ...newVault,
+        status: args.status,
+        retireReason: args.reason,
+        retiredAt: now,
+      });
+    } else {
+      return sortVaultKeys({
+        ...newVault,
+        status: args.status,
+        retiredAt: now,
+      });
+    }
+  } else if (args.status === 'paused') {
+    if (args.reason) {
+      return sortVaultKeys({
+        ...newVault,
+        status: args.status,
+        pauseReason: args.reason,
+        pausedAt: now,
+      });
+    } else {
+      return sortVaultKeys({
+        ...newVault,
+        status: args.status,
+        pausedAt: now,
+      });
+    }
+  } else {
+    return sortVaultKeys({
+      ...newVault,
+      status: args.status,
+    });
+  }
+}
+
+async function updateVaults(vaultsToUpdate: VaultConfig[], chainId: string) {
+  const existingVaults = await getVaultsForChain(chainId);
+  const vaultsToUpdateById = keyBy(vaultsToUpdate, 'id');
+  const modified = existingVaults.map(oldVault => vaultsToUpdateById[oldVault.id] ?? oldVault);
+  await saveJson(`./src/config/vault/${chainId}.json`, modified, 'prettier');
+  console.log(`[INFO] ${vaultsToUpdate.length} vaults modified`);
+}
+
+async function getVaultsByIds(vaultIds: string[]) {
+  const existingVaultsByChainId = await getAllVaultConfigsByChainId();
+  const res: typeof existingVaultsByChainId = {};
+  let foundCount = 0;
+  console.log(vaultIds);
+  for (const chainId in existingVaultsByChainId) {
+    const filtered = existingVaultsByChainId[chainId].filter(vault => vaultIds.includes(vault.id));
+    if (filtered.length > 0) {
+      res[chainId] = filtered;
+      foundCount += filtered.length;
+    }
+  }
+
+  if (foundCount !== vaultIds.length) {
+    console.warn(`[WARN] ${vaultIds.length - foundCount} vaults not found`);
+  }
+  return res;
+}
+
 async function main() {
   const args = getRunArgs();
   if (args.help) {
@@ -69,68 +158,27 @@ async function main() {
     return;
   }
 
-  const chain = getChain(args.chain);
-  const unmodified = new Set(args.vaults);
-  const allVaults = await getVaultsForChain(args.chain);
   const timestamp = Math.floor(Date.now() / 1000);
-  const modified = allVaults.map(oldVault => {
-    if (unmodified.has(oldVault.id)) {
-      unmodified.delete(oldVault.id);
 
-      delete oldVault.retireReason;
-      delete oldVault.retiredAt;
-      delete oldVault.pauseReason;
-      delete oldVault.pausedAt;
+  const vaultsToUpdate = await getVaultsByIds(args.vaults);
+  console.log(vaultsToUpdate.length);
+  for (const chainId in vaultsToUpdate) {
+    const modifiedVaults: VaultConfig[] = [];
+    const allVaults = await getVaultsForChain(chainId);
 
-      if (args.status === 'eol') {
-        if (args.reason) {
-          return sortVaultKeys({
-            ...oldVault,
-            status: args.status,
-            retireReason: args.reason,
-            retiredAt: timestamp,
-          });
-        } else {
-          return sortVaultKeys({
-            ...oldVault,
-            status: args.status,
-            retiredAt: timestamp,
-          });
+    for (const vault of vaultsToUpdate[chainId]) {
+      const newVault = applyChange(vault, args, timestamp);
+      modifiedVaults.push(newVault);
+
+      if (args.includeRelated && vault.earnedTokenAddress) {
+        const relatedVaults = findRelatedVaults(allVaults, vault.earnedTokenAddress);
+        for (const relatedVault of relatedVaults) {
+          modifiedVaults.push(applyChange(relatedVault, args, timestamp));
         }
-      } else if (args.status === 'paused') {
-        if (args.reason) {
-          sortVaultKeys({
-            ...oldVault,
-            status: args.status,
-            pauseReason: args.reason,
-            pausedAt: timestamp,
-          });
-        } else {
-          return sortVaultKeys({
-            ...oldVault,
-            status: args.status,
-            pausedAt: timestamp,
-          });
-        }
-      } else {
-        return sortVaultKeys({
-          ...oldVault,
-          status: args.status,
-        });
       }
     }
 
-    return oldVault;
-  });
-
-  if (unmodified.size > 0) {
-    console.warn(`[WARN] ${Array.from(unmodified.values()).join(', ')} not found on ${chain.name}`);
-  }
-
-  const modifiedCount = args.vaults.length - unmodified.size;
-  if (modifiedCount > 0) {
-    await saveJson(`./src/config/vault/${args.chain}.json`, modified, 'prettier');
-    console.log(`[INFO] ${modifiedCount} vaults modified`);
+    await updateVaults(modifiedVaults, chainId);
   }
 }
 

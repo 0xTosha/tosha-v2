@@ -1358,6 +1358,15 @@
     "risks": ["NO_TIMELOCK"]
   },
   {
+    "id": "morpho",
+    "name": "Morpho",
+    "website": "https://app.morpho.org/",
+    "twitter": "MorphoLabs",
+    "documentation": "https://docs.morpho.org/",
+    "description": "Morpho is a trustless and efficient lending primitive with permissionless market creation.",
+    "type": "money-market"
+  },
+  {
     "id": "wagmi",
     "name": "WAGMI",
     "website": "https://wagmi.com/",
@@ -1365,6 +1374,16 @@
     "documentation": "https://docs.wagmi.com/wagmi",
     "description": "At the heart of the WAGMI protocol lies a commitment to revolutionize decentralized finance (DeFi) by providing secure, robust, and innovative products that make DeFi more accessible and user-friendly.",
     "type": "amm"
+  },
+  {
+    "id": "swapx",
+    "name": "SwapX",
+    "website": "https://swapx.fi/",
+    "twitter": "swapxfi",
+    "documentation": "https://swapxfi.gitbook.io/swapx-docs",
+    "description": "SwapX is a decentralized exchange (DEX) which aims to become the leading platform for native concentrated liquidity on Sonic Blockchain.",
+    "type": "amm",
+    "risks": ["NO_TIMELOCK"]
   },
   {
     "id": "shadow",
