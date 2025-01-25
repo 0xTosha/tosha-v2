@@ -205,7 +205,7 @@
     "earnContractAddress": "0x5261780fc6e0AE1FfCe37682044371932c2e8E97",
     "oracle": "lps",
     "oracleId": "sushi-celo-wethv2-celo",
-    "status": "eol",
+    "status": "active",
     "createdAt": 1641132564,
     "retireReason": "tvl",
     "retiredAt": 1691070855,
