@@ -1,5 +1,36 @@
 [
   {
+    "id": "compound-arbitrum-usdc-vt",
+    "name": "USDC",
+    "token": "USDC",
+    "tokenAddress": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "tokenDecimals": 6,
+    "tokenProviderId": "compound",
+    "earnContractAddress": "0xb7a581aD56c96fB41A3925D3e1EdF4BD24175a64",
+    "earnedToken": "vtCompUSDC",
+    "earnedTokenAddress": "0xb7a581aD56c96fB41A3925D3e1EdF4BD24175a64",
+    "oracle": "lps",
+    "oracleId": "compound-arbitrum-usdc-vt",
+    "status": "active",
+    "createdAt": 1738523608,
+    "platformId": "compound",
+    "assets": [
+      "USDC"
+    ],
+    "migrationIds": [],
+    "risks": [
+      "COMPLEXITY_LOW",
+      "IL_NONE",
+      "MCAP_MEDIUM",
+      "AUDIT",
+      "CONTRACTS_VERIFIED"
+    ],
+    "strategyTypeId": "compounds",
+    "addLiquidityUrl": "XXX",
+    "removeLiquidityUrl": "XXX",
+    "network": "arbitrum"
+  },
+  {
     "id": "pendle-arb-gusdc-26jun25",
     "name": "gUSDC 26Jun25",
     "token": "gUSDC-26JUN25",
